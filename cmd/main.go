@@ -4,6 +4,7 @@ import (
 	"log"
 	"runtime"
 
+	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/inkyblackness/imgui-go/v4"
 	"github.com/pkg/errors"
 	"github.com/veandco/go-sdl2/sdl"
@@ -79,6 +80,30 @@ func newSDL(io imgui.IO) (*SDL, error) {
 	return platform, nil
 }
 
+type Renderer struct {
+	imguiIO     imgui.IO
+	glslVersion string
+}
+
+func newRenderer(io imgui.IO) (*Renderer, error) {
+	if err := gl.Init(); err != nil {
+		return nil, errors.Wrap(err, "failed to initialize renderer")
+	}
+
+	renderer := &Renderer{
+		imguiIO:     io,
+		glslVersion: "#version 150",
+	}
+	return renderer, nil
+}
+
+func (renderer *Renderer) Dispose() {
+	renderer.invalidateDeviceObjects()
+}
+
+func (renderer *Renderer) invalidateDeviceObjects() {
+}
+
 func main() {
 	context := imgui.CreateContext(nil)
 	defer context.Destroy()
@@ -89,4 +114,10 @@ func main() {
 		log.Fatalf("failed to initialize SDL: %s", err)
 	}
 	defer platform.Dispose()
+
+	renderer, err := newRenderer(io)
+	if err != nil {
+		log.Fatalf("failed to initialize renderer: %s", err)
+	}
+	defer renderer.Dispose()
 }
